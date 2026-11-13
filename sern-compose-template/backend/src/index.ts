@@ -43,10 +43,6 @@ app.post("/api/users", async (req, res) => {
   res.json({ success: true });
 });
 
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "../../frontend/dist/index.html"));
-});
-
 initDb().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
