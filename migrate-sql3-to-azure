@@ -1,0 +1,38 @@
+import sqlite3
+import pyodbc
+
+# Połączenie z lokalnym SQLite
+sqlite_conn = sqlite3.connect('db.sqlite')
+sqlite_cursor = sqlite_conn.cursor()
+
+# Połączenie z Azure SQL (wpisz swoje dane)
+azure_conn = pyodbc.connect(
+    'DRIVER={ODBC Driver 18 for SQL Server};'
+    'SERVER=testserverforstudent.database.windows.net;'
+    'DATABASE=test;'
+    'UID=pgsql;'
+    'PWD=TWOJE_HASLO;'
+    'Encrypt=yes;'
+    'TrustServerCertificate=no;'
+)
+azure_cursor = azure_conn.cursor()
+
+# Utwórz tabelę (jeśli nie istnieje)
+azure_cursor.execute("""
+    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'users')
+    CREATE TABLE users (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        name NVARCHAR(255) NOT NULL
+    )
+""")
+
+# Przenieś dane
+sqlite_cursor.execute("SELECT id, name FROM users")
+for row in sqlite_cursor.fetchall():
+    azure_cursor.execute("INSERT INTO users (name) VALUES (?)", (row[1],))
+
+azure_conn.commit()
+print("Migracja zakończona")
+
+sqlite_conn.close()
+azure_conn.close()
